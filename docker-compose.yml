@@ -4,19 +4,37 @@ services:
     build:
       context: ./poll
       dockerfile: Dockerfile
+    env_file:
+      - ".env"
     ports:
-      - 80:80
+      - ${POLL_EXT_PORT}:${POLL_INT_PORT}
     networks:
       - poll-tier
 
   redis:
     container_name: redis
     image: redis:8.2-m01-alpine3.22
+    env_file:
+      - ".env"
     ports:
-      - 6379:6379
+      - ${REDIS_EXT_PORT}:${REDIS_INT_PORT}
     networks:
       - poll-tier
 
+  result:
+    container_name: result
+    build:
+      context: ./result
+      dockerfile: Dockerfile
+    env_file:
+      - ".env"
+    ports:
+      - ${RESULT_EXT_PORT}:${RESULT_INT_PORT}
+    networks:
+      - result-tier
+
 networks:
   poll-tier:
+    driver: bridge
+  result-tier:
     driver: bridge

@@ -1,0 +1,22 @@
+services:
+  poll:
+    container_name: poll
+    build:
+      context: ./poll
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    networks:
+      - poll-tier
+
+  redis:
+    container_name: redis
+    image: redis:8.2-m01-alpine3.22
+    ports:
+      - 6379:6379
+    networks:
+      - poll-tier
+
+networks:
+  poll-tier:
+    driver: bridge

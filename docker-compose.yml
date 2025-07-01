@@ -1,6 +1,7 @@
 services:
   poll:
     container_name: poll
+    restart: always
     build:
       context: ./poll
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
 
   redis:
     container_name: redis
+    restart: always
     image: redis:8.2-m01-alpine3.22
     env_file:
       - ".env"
@@ -20,9 +22,11 @@ services:
       - ${REDIS_EXT_PORT}:${REDIS_INT_PORT}
     networks:
       - poll-tier
+      - back-tier
 
   result:
     container_name: result
+    restart: always
     build:
       context: ./result
       dockerfile: Dockerfile
@@ -32,9 +36,49 @@ services:
       - ${RESULT_EXT_PORT}:${RESULT_INT_PORT}
     networks:
       - result-tier
+    depends_on:
+      - db
+
+  db:
+    image: postgres:9
+    container_name: postgres
+    restart: always
+    env_file:
+      - ".env"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_EXT_PORT}:${POSTGRES_INT_PORT}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema:/docker-entrypoint-initdb.d
+    networks:
+      - back-tier
+      - result-tier
+
+  worker:
+    container_name: worker
+    restart: always
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file:
+      - ".env"
+    networks:
+      - back-tier
+    depends_on:
+      - redis
+      - db
 
 networks:
   poll-tier:
     driver: bridge
   result-tier:
     driver: bridge
+  back-tier:
+    driver: bridge
+
+volumes:
+  pgdata:

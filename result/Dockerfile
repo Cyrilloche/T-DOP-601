@@ -2,10 +2,12 @@ FROM node:alpine3.22
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json /app
 
 RUN npm install
 
-COPY . .
+COPY . /app
 
-CMD [ "npm", "run", "start"]
+EXPOSE 80
+
+CMD ["node", "/app/server.js"]

@@ -34,15 +34,14 @@ services:
       - ".env"
     ports:
       - ${RESULT_EXT_PORT}:${RESULT_INT_PORT}
-    volumes:
-      - ./result/init.sh:/docker-entrypoint-initdb.d
     networks:
       - result-tier
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
-    image: postgres:9
+    image: postgres:10
     container_name: postgres
     restart: always
     env_file:
@@ -60,6 +59,11 @@ services:
     networks:
       - back-tier
       - result-tier
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   worker:
     container_name: worker
@@ -74,8 +78,10 @@ services:
     networks:
       - back-tier
     depends_on:
-      - redis
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
 networks:
   poll-tier:
